@@ -2,26 +2,93 @@
 import serial
 import subprocess
 import ctypes
+import serial.tools.list_ports
+import time
 
-PORT = "COM3"
 BAUD = 115200
 
+#Function to find the m5 stack core 2
+#This one works
+def find_m5Stack():
+    ports = serial.tools.list_ports.comports()
+
+    for port in ports:
+        print(f"Found serial device : {port.device} - {port.description}")
+
+        #m5 uses Silicon labs cp210x usb to uart
+        if port.vid == 4292 and port.pid == 60000:
+            print(f"Using {port.device}")
+            return port.device
+
+    return None
+
+
+
+
+
+
+#not working going to do a work arround as its picking the wrong com 
+#most likely will reuse code but adding an if
+#    for port in ports:
+#        print(f"Found serial device : {port.device} - {port.description}")
+#
+#        try:
+#            test = serial.Serial(port.device, BAUD, timeout=1)
+#            test.close()
+
+#            print(f"Using {port.device}")
+#            return port.device
+
+#        except (serial.SerialException, OSError):
+#            continue
+
+#    return None
+
+
+PORT = find_m5Stack()
+
+while  PORT is None:
+    print("M5 is not found... searching...")
+    time.sleep(2)
+    PORT = find_m5Stack()
+
 ser = serial.Serial(PORT, BAUD, timeout=1)
-#temporary can remove after
-print(f"Connected to M5Stack on {PORT}")
-print("Waiting for buttons...")
+
+print(f"Connected to m5 stack on {PORT}")
+print("waiting on inputs...")
 
 #The stream deck sends messages 
 #Note to self when editing this make sure the Aurino and the server 
 #Get the same text otherwise it wont work and make sure to check
 #That the cmd naming scheme is right otherwise it wont find the app
 while True:
-    message = ser.readline().decode("utf-8", errors="ignore").strip()
+    try:
+        message = ser.readline().decode("utf-8", errors="ignore").strip()
 
-    if not message:
-        continue
+        if not message:
+            continue
 
-    print(f"Received: {message}")
+        print(f"Received: {message}")
+
+    except (serial.SerialException, OSError):
+        print("m5 stack had disconnected!")
+        print("Waiting for a reconect")
+
+        try:
+            ser.close()
+        except:
+            pass
+
+        PORT = None
+        while PORT is None:
+            time.sleep(2)
+            PORT = find_m5Stack()
+
+        ser = serial.Serial(PORT, BAUD, timeout=1)
+
+        print(f"M5stack has reconected on {PORT}")
+        print("waiting for inputs..")
+
 
 
     #app part
