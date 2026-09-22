@@ -17,8 +17,12 @@
 #include "lock_icon.h"
 #include <string.h>
 #include <stdlib.h>
-
-
+#include "discord_icon.h"
+#include "spotify_icon.h"
+#include "github_icon.h"
+#include "nvidia_icon.h"
+#include "vscode_icon.h"
+#include "house_icon.h"
 
 
 //note: When including notes make sure that the format is icon.h
@@ -27,6 +31,7 @@
 //Pagenumbering system 
 
 int currentPage = 0;
+bool appsPage = false;
 const int totalPages = 3;
 
 //calibration of the cursor
@@ -241,6 +246,97 @@ void animateButtonPress(int x, int y, int w, int h, uint16_t color, const uint16
 
 }
 
+void animateAppButtonPress(int x, int y, int w, int h, uint16_t color, const char* title) {
+
+  // save original button
+  int padding = 10;
+
+  int spriteX = x - padding;
+  int spriteY = y - padding;
+  int spriteW = w + (padding * 2);
+  int spriteH = h + (padding * 2);
+
+  M5Canvas appCanvas(&M5.Display);
+
+  appCanvas.createSprite(spriteW, spriteH);
+  appCanvas.setColorDepth(16);
+
+  size_t bufferSize = spriteW * spriteH * sizeof(uint16_t);
+  uint16_t* originalBuffer = (uint16_t*)malloc(bufferSize);
+
+  if (!originalBuffer) {
+    appCanvas.deleteSprite();
+    return;
+  }
+
+  
+  M5.Display.readRect(spriteX, spriteY, spriteW, spriteH, originalBuffer);
+
+  for (int frame = 0; frame <= 10; frame++) {
+
+    float progress = frame / 10.0f;
+
+    float pressAmount = sinf(progress * 3.14159f) * 3.0f;
+    float brightness = sinf(progress * 3.14159f) * 0.65f;
+
+    uint16_t pressedColor = brightenButtonColor(color, brightness);
+
+    memcpy(appCanvas.getBuffer(), originalBuffer, bufferSize);
+
+    //make the button glow
+    for (int glow = 8; glow >= 2; glow -= 2) {
+
+      float glowAmount =
+        brightness * (1.0f - ((glow - 2) / 8.0f));
+
+      uint16_t glowColor =
+        brightenButtonColor(color, 0.15f + (glowAmount * 0.85f));
+
+      appCanvas.drawRoundRect(
+        (x - spriteX) - glow,
+        (y - spriteY) - glow,
+        w + (glow * 2),
+        h + (glow * 2),
+        12 + glow,
+        glowColor
+      );
+    }
+
+    // shrink button effect
+    int buttonX = (x - spriteX) + (int)pressAmount;
+    int buttonY = (y - spriteY) + (int)pressAmount;
+    int buttonW = w - ((int)pressAmount * 2);
+    int buttonH = h - ((int)pressAmount * 2);
+
+    //draw original button
+    appCanvas.fillRoundRect(buttonX, buttonY, buttonW, buttonH, 12, pressedColor);
+
+    appCanvas.setTextColor(TFT_WHITE);
+    appCanvas.setTextSize(2);
+
+    int textWidth = appCanvas.textWidth(title);
+
+    appCanvas.setCursor(
+      buttonX + (buttonW - textWidth) / 2,
+      buttonY + (buttonH / 2) - 8
+    );
+
+    appCanvas.print(title);
+
+    
+    appCanvas.pushSprite(spriteX, spriteY);
+
+    delay(12);
+  }
+
+  //bring back original buffer
+  memcpy(appCanvas.getBuffer(), originalBuffer, bufferSize);
+  appCanvas.pushSprite(spriteX, spriteY);
+
+  free(originalBuffer);
+  appCanvas.deleteSprite();
+}
+
 // page numbering system
 
 void drawPageNumber() {
@@ -355,6 +451,30 @@ void drawPCPage() {
   
   drawButtonWithIcon(10, 130, 145, 75, TFT_ORANGE, restart_icon, 48, "RESTART");
   drawButtonWithIcon(165, 130, 145, 75, TFT_RED, toggle_off_icon, 48, "SHUTDOWN");
+}
+
+
+// apps page
+
+void drawAppsPage() {
+
+  drawTarget->fillScreen(TFT_BLACK);
+
+  drawTarget->setTextColor(TFT_WHITE);
+  drawTarget->setTextSize(2);
+
+  drawTarget->setCursor(125, 8);
+  drawTarget->println("APPS");
+
+// note to self once im done please change it from drawButton to drawButtonWithIcon
+
+  drawButtonWithIcon(10, 45, 95, 75, TFT_BLUE, discord_icon, 48, "DISCORD");
+  drawButtonWithIcon(112, 45, 95, 75, TFT_GREEN, spotify_icon, 48, "SPOTIFY");
+  drawButtonWithIcon(214, 45, 95, 75, TFT_WHITE, github_icon, 48, "GITHUB");
+
+  drawButtonWithIcon(10, 130, 95, 75, TFT_BLACK, nvidia_icon, 48, "NVIDIA APP");
+  drawButtonWithIcon(112, 130, 95, 75, TFT_PURPLE, vscode_icon, 48, "VS CODE");
+  drawButtonWithIcon(214, 130, 95, 75, TFT_RED, house_icon, 48, "HOME");
 }
 
 
@@ -475,7 +595,12 @@ void setup() {
 
   Serial.begin(115200);
 
-  drawPage();
+  if (appsPage) {
+    drawAppsPage();
+  }
+  else{
+    drawPage();
+  }
 }
 
 
@@ -506,7 +631,7 @@ void loop() {
     int swipeY = touch.y - touchStartY;
 
    
-    if (abs(swipeX) > 60 && abs(swipeX) > abs(swipeY)) {
+    if (!appsPage & abs(swipeX) > 60 && abs(swipeX) > abs(swipeY)) {
 
       
       if (swipeX < 0) {
@@ -546,6 +671,60 @@ void loop() {
     int x = touch.x;
     int y = touch.y;
 
+// apps page for all the extra apps
+
+    if (appsPage) {
+
+      //Discord
+      
+      if (x >= 10 && x <= 105 && y >= 45 && y <= 120) {
+        Serial.println("DISCORD");
+
+        animateAppButtonPress(10, 45, 95, 75, TFT_BLUE,"DISCORD");
+      }
+
+      //Spotify
+
+      else if (x >= 112 && x <= 207 && y >= 45 && y <= 120) {
+        Serial.println("SPOTIFY");
+        
+        animateAppButtonPress(112, 45, 95, 75, TFT_GREEN, "SPOTIFY");
+      }
+
+      //Github
+      else if (x >= 214 && x <= 309 && y >= 45 && y <= 120) {
+        Serial.println("GITHUB");
+        
+        animateAppButtonPress(214, 45, 95, 75, TFT_BLUE, "GITHUB");
+      }
+
+      // edge
+
+      else if (x >= 10 && x <= 105 && y >= 130 && y <= 205) {
+        Serial.println("NVIDIA APP");
+        animateAppButtonPress(10, 130, 95, 75, TFT_BLUE, "NVIDIA APP");
+      }
+
+      // vs code
+      else if (x >= 112 && x <= 207 && y >= 130 && y <= 205) {
+        Serial.println("VS CODE");
+        animateAppButtonPress(112, 130, 95, 75, TFT_PURPLE, "VS CODE");
+      }
+
+      //home button
+      else if (x >= 214 && x <= 309 && y >= 130 && y <= 205) {
+        Serial.println("HOME");
+        appsPage = false;
+        drawPage();
+      }
+
+      return;
+    }
+
+
+
+
+
 
 // home page for all the main apps that i put on the 
 // my stream deck page
@@ -581,7 +760,8 @@ void loop() {
 
         Serial.println("APPS");
         animateButtonPress(165, 130, 145, 75, TFT_PURPLE, apps_icon, 48, "APPS");
-
+        appsPage = true; 
+        drawAppsPage();
       }
     }
 
