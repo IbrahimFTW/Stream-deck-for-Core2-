@@ -1,6 +1,7 @@
 #importing whats needed
 import serial
 import subprocess
+import ctypes
 
 PORT = "COM3"
 BAUD = 115200
@@ -21,6 +22,9 @@ while True:
         continue
 
     print(f"Received: {message}")
+
+
+    #app part
 
     if message == "YOUTUBE":
         subprocess.Popen(
@@ -81,4 +85,72 @@ while True:
                 shell=False
             )
         
+    #working on the media part now
+    #ctypes will allow us to use windows multimedia commands 
+    
+
+    elif message == "MEDIA_PREVIOUS":
+        print("Previous track")
+        ctypes.windll.user32.keybd_event(0xB1, 0, 0, 0)
+        ctypes.windll.user32.keybd_event(0xB1, 0, 2, 0)
+
+    elif message == "MEDIA_PLAY":
+        print("Play/Pause")
+        ctypes.windll.user32.keybd_event(0xB3, 0, 0, 0)
+        ctypes.windll.user32.keybd_event(0xB3, 0, 2, 0)
+
+    elif message == "MEDIA_NEXT":
+        print("Next track")
+        ctypes.windll.user32.keybd_event(0xB0, 0, 0, 0)
+        ctypes.windll.user32.keybd_event(0xB0, 0, 2, 0)
+
+
+    elif message == "MEDIA_MUTE":
+        print("Mute")
+        ctypes.windll.user32.keybd_event(0xAD, 0, 0, 0)
+        ctypes.windll.user32.keybd_event(0xAD, 0, 2, 0)
+
+    elif message == "VOLUME_DOWN":
+        print("Volume down")
+        ctypes.windll.user32.keybd_event(0xAE, 0, 0, 0)
+        ctypes.windll.user32.keybd_event(0xAE, 0, 2, 0)
+
+    elif message == "VOLUME_UP":
+        print("Volume up")
+        ctypes.windll.user32.keybd_event(0xAF, 0, 0, 0)
+        ctypes.windll.user32.keybd_event(0xAF, 0, 2, 0)
+
+
+    #working on the pc area
+
+    elif message == "PC_LOCK":
+        print("locking PC...")
+        subprocess.Popen(
+            #this is the command to lock pc
+            ["rundll32.exe", "user32.dll,LockWorkStation"],
+            shell=False
+        )
+
+    elif message == "PC_SLEEP":
+        print("Putting PC to sleep...")
+        subprocess.Popen(
+            ["powershell", "-Command", "Start-Sleep -Seconds 1; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Application]::SetSuspendState('Suspend', $false, $false)"],
+            shell=False
+        )
+
+    elif message == "PC_RESTART":
+        print("Restarting Pc...")
+        subprocess.Popen(
+            ["shutdown", "/r", "/t", "5"],
+            shell=False
+        )
+
+    elif message == "PC_SHUTDOWN":
+        print("Shutting down PC...")
+        subprocess.Popen(
+            ["shutdown", "/s", "/t", "5"],
+            shell=False
+        )
+
+#python server.py
 
