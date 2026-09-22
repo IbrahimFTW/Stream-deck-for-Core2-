@@ -25,7 +25,7 @@ while True:
     if message == "YOUTUBE":
         subprocess.Popen(
             # make it just open the web since theres no app :p
-            ["cmd", "/c", "start", "", "https://www.youtube.com:"],
+            ["cmd", "/c", "start", "", "https://www.youtube.com"],
             shell=False
         )
 
@@ -45,3 +45,40 @@ while True:
 
     elif message == "MEDIA":
         print("Media button pressed!")
+
+    elif message == "DISCORD":
+        print("Opening Discord...")
+        subprocess.Popen(
+            ["cmd", "/c", "start", "", "Discord:"],
+            shell=False
+        )
+
+    elif message == "SPOTIFY":
+        print("Opening Spotify...")
+        subprocess.Popen(
+            ["cmd", "/c", "start", "", "spotify:"],
+            shell=False
+        )
+
+    elif message == "GITHUB":
+        print("Opening Github...")
+        subprocess.Popen(
+            ["cmd", "/c", "start", "", "https://github.com/IbrahimFTW"],
+            shell=False
+        )
+
+    elif message == "NVIDIA APP":
+        print("Opening Nvidia App...")
+        subprocess.Popen(
+            [r"C:\Program Files\NVIDIA Corporation\NVIDIA App\CEF\NVIDIA App.exe"],
+            shell=False
+        )
+
+    elif message == "VS CODE":
+            print("Opening Vs Code")
+            subprocess.Popen(
+                ["cmd", "/c", "start", "", "Code.exe"],
+                shell=False
+            )
+        
+
